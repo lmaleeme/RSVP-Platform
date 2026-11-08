@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RSVP Admin Portal</title>
+  <style>
+    :root{--ink:#20202a;--muted:#6f7080;--line:#e5e5ec;--panel:#fff;--page:#f4f5f9;--brand:#6B4E71}
+    *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif}
+    .top{background:#20202a;color:#fff;padding:19px 26px;display:flex;justify-content:space-between;align-items:center;gap:12px}.top strong{font-size:18px}.top span{color:#c7c6d0;font-size:13px}
+    .wrap{max-width:1180px;margin:28px auto;padding:0 18px}.login,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 28px #25253a0a}
+    .login{max-width:420px;margin:9vh auto;padding:28px}.panel{padding:22px;margin-bottom:18px}.hidden{display:none!important}
+    h1{font-size:25px;margin:0 0 6px}h2{font-size:17px;margin:0 0 16px}.muted{color:var(--muted);margin:0 0 20px;font-size:13px}
+    label{display:block;font-weight:650;font-size:13px;margin:0 0 6px}.field{margin-bottom:15px}input,textarea,select{width:100%;border:1px solid #d9d9e2;border-radius:9px;padding:11px 12px;font:inherit;background:#fff;color:var(--ink)}textarea{min-height:90px;resize:vertical}
+    input[type=color]{height:44px;padding:4px;cursor:pointer}input[type=date]{min-height:44px}input[type=file]{padding:8px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}.colors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .btn{border:0;border-radius:9px;padding:11px 17px;font-weight:700;cursor:pointer;background:var(--brand);color:#fff}.btn.secondary{background:#eceaf0;color:#292633}.btn:disabled{opacity:.55;cursor:wait}
+    .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.status{font-size:13px;color:var(--muted)}.status.error{color:#b42318}.status.ok{color:#167647}
+    .layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.85fr);gap:18px;align-items:start}
+    .preview{position:sticky;top:18px;overflow:hidden;border-radius:16px;min-height:510px;background:#1b1b3a;color:#f5f1e8;padding:30px 22px;display:flex;align-items:center;justify-content:center;text-align:center}
+    .preview:before{content:"";position:absolute;inset:0;background:var(--preview-image,none) center/cover no-repeat;opacity:.35}.preview>*{position:relative}.preview-card{max-width:390px;width:100%;padding:28px 22px;border-radius:15px;background:#17172bd9;backdrop-filter:blur(5px)}
+    .preview-logo{max-width:150px;max-height:70px;object-fit:contain;margin:0 auto 16px;display:none}.preview h3{font-size:27px;margin:0 0 8px}.preview p{font-size:14px;white-space:pre-wrap}.preview button{background:var(--brand);border:0;color:white;padding:11px 20px;border-radius:8px;margin-top:12px}
+    .help{font-size:12px;color:var(--muted);margin-top:5px}.preview-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+    @media(max-width:850px){.layout{grid-template-columns:1fr}.preview{position:relative;top:auto;min-height:420px}.colors{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.grid{grid-template-columns:1fr}.top{padding:16px}.wrap{margin:18px auto}}
+  </style>
+</head>
+<body>
+  <div class="top"><strong>RSVP Admin Portal</strong><span>Invitation design & publishing</span></div>
+  <div class="wrap">
+    <section class="login" id="loginPanel">
+      <h1>Admin sign in</h1><p class="muted">Enter the administrator password configured in your Apps Script project.</p>
+      <div class="field"><label for="password">Admin password</label><input id="password" type="password" autocomplete="current-password" placeholder="Enter password"></div>
+      <div class="actions"><button class="btn" id="loginBtn" onclick="login()">Sign in</button><span class="status" id="loginStatus"></span></div>
+    </section>
+
+    <main id="adminPanel" class="hidden">
+      <div class="layout">
+        <div>
+          <section class="panel">
+            <h1>Invitation content</h1><p class="muted">Update the wording visitors see on the RSVP page.</p>
+            <div class="field"><label for="campaignTitle">Main heading</label><input id="campaignTitle" data-key="campaignTitle" maxlength="120"></div>
+            <div class="field"><label for="introText">Intro line</label><input id="introText" data-key="introText" maxlength="240"></div>
+            <div class="field"><label for="invitationMessage">Invitation message</label><textarea id="invitationMessage" data-key="invitationMessage" maxlength="1500"></textarea></div>
+            <div class="field"><label for="rsvpByDate">RSVP deadline</label><input id="rsvpByDate" data-key="rsvpByDate" type="date"><div class="help">Shown as “RSVP BY: DATE” on the invitation.</div></div>
+          </section>
+
+          <section class="panel">
+            <h2>Branding & media</h2>
+            <div class="field"><label for="logoUrl">Logo image URL</label><input id="logoUrl" data-key="logoUrl" type="url" placeholder="https://…"><div class="help">Use a publicly accessible image URL (PNG, JPG, SVG or WebP).</div></div>
+            <div class="field"><label for="backgroundMediaType">Background type</label><select id="backgroundMediaType" data-key="backgroundMediaType"><option value="none">No background media</option><option value="image">Background image</option><option value="video">Looping background video</option></select></div>
+            <div class="field"><label for="backgroundMediaUrl">Background image / video URL</label><input id="backgroundMediaUrl" data-key="backgroundMediaUrl" type="url" placeholder="https://…"><div class="help">For video, use a direct, publicly accessible MP4 or WebM URL. YouTube/Vimeo watch-page links are not direct video files.</div></div>
+          </section>
+
+          <section class="panel">
+            <h2>Colours</h2><p class="muted">Choose your brand colours. The preview updates as you make changes.</p>
+            <div class="colors">
+              <div class="field"><label for="primaryColor">Primary</label><input id="primaryColor" data-key="primaryColor" type="color"></div>
+              <div class="field"><label for="accentColor">Accent</label><input id="accentColor" data-key="accentColor" type="color"></div>
+              <div class="field"><label for="backgroundColor">Page background</label><input id="backgroundColor" data-key="backgroundColor" type="color"></div>
+              <div class="field"><label for="textColor">Text</label><input id="textColor" data-key="textColor" type="color"></div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="actions"><button class="btn" id="saveBtn" onclick="saveSettings()">Save & publish</button><button class="btn secondary" onclick="loadSettings()">Discard changes</button><span class="status" id="saveStatus"></span></div>
+            <p class="help">Publishing updates the public RSVP page. Visitors may briefly see a cached version; the page refreshes its settings from the server on each load.</p>
+          </section>
+        </div>
+
+        <aside class="preview" id="preview">
+          <video id="previewVideo" class="preview-video" muted autoplay loop playsinline></video>
+          <div class="preview-card">
+            <img id="previewLogo" class="preview-logo" alt="Logo">
+            <div style="font-size:11px;letter-spacing:2px;margin-bottom:12px" id="previewDeadline">YOU'RE INVITED</div>
+            <h3 id="previewTitle">You're invited</h3><p id="previewIntro">We would be delighted if you could join us.</p><p id="previewMessage">We look forward to celebrating with you.</p><button type="button">Submit RSVP</button>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+<script>
+  let adminPassword='';
+  const keys=['campaignTitle','introText','invitationMessage','rsvpByDate','logoUrl','backgroundMediaUrl','backgroundMediaType','primaryColor','accentColor','backgroundColor','textColor'];
+  const defaults={campaignTitle:"You're invited",introText:'We would be delighted if you could join us.',invitationMessage:'We look forward to celebrating with you. Please let us know if you can attend.',rsvpByDate:'',logoUrl:'',backgroundMediaUrl:'',backgroundMediaType:'none',primaryColor:'#6B4E71',accentColor:'#E8B54D',backgroundColor:'#1B1B3A',textColor:'#F5F1E8'};
+  function login(){
+    const p=document.getElementById('password').value;const s=document.getElementById('loginStatus');
+    if(!p){s.textContent='Enter your password.';return}
+    document.getElementById('loginBtn').disabled=true;s.textContent='Checking…';
+    google.script.run.withSuccessHandler(ok=>{
+      document.getElementById('loginBtn').disabled=false;
+      if(!ok){s.textContent='Incorrect password or admin password not configured.';return}
+      adminPassword=p;document.getElementById('loginPanel').classList.add('hidden');document.getElementById('adminPanel').classList.remove('hidden');loadSettings();
+    }).withFailureHandler(err=>{document.getElementById('loginBtn').disabled=false;s.textContent=err.message||'Sign-in failed.'}).adminLogin(p);
+  }
+  function setFields(data){keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=data[k]!==undefined&&data[k]!==''?data[k]:(defaults[k]||'')});updatePreview()}
+  function loadSettings(){const s=document.getElementById('saveStatus');s.textContent='Loading…';google.script.run.withSuccessHandler(data=>{setFields(data||defaults);s.textContent='Settings loaded.'}).withFailureHandler(err=>{s.textContent=err.message||'Could not load settings.';s.className='status error'}).adminGetSettings(adminPassword)}
+  function collect(){const d={};keys.forEach(k=>d[k]=document.getElementById(k).value);return d}
+  function saveSettings(){const b=document.getElementById('saveBtn'),s=document.getElementById('saveStatus');b.disabled=true;s.className='status';s.textContent='Publishing…';google.script.run.withSuccessHandler(()=>{b.disabled=false;s.className='status ok';s.textContent='Published successfully.';updatePreview()}).withFailureHandler(err=>{b.disabled=false;s.className='status error';s.textContent=err.message||'Save failed.'}).adminSaveSettings(collect(),adminPassword)}
+  function updatePreview(){
+    const d=collect();const p=document.getElementById('preview');p.style.backgroundColor=d.backgroundColor||defaults.backgroundColor;p.style.color=d.textColor||defaults.textColor;p.style.setProperty('--brand',d.primaryColor||defaults.primaryColor);
+    document.getElementById('previewTitle').textContent=d.campaignTitle||defaults.campaignTitle;document.getElementById('previewIntro').textContent=d.introText;document.getElementById('previewMessage').textContent=d.invitationMessage;
+    const deadline=document.getElementById('previewDeadline');deadline.textContent=d.rsvpByDate?'RSVP BY: '+new Date(d.rsvpByDate+'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}).toUpperCase():"YOU'RE INVITED";
+    const logo=document.getElementById('previewLogo');logo.style.display=d.logoUrl?'block':'none';if(d.logoUrl)logo.src=d.logoUrl;
+    const v=document.getElementById('previewVideo');v.style.display='none';v.pause();p.style.backgroundImage='none';
+    if(d.backgroundMediaUrl&&d.backgroundMediaType==='image'){p.style.backgroundImage='linear-gradient(#0005,#0005),url("'+d.backgroundMediaUrl.replace(/"/g,'%22')+'")';p.style.backgroundSize='cover';p.style.backgroundPosition='center'}
+    if(d.backgroundMediaUrl&&d.backgroundMediaType==='video'){v.src=d.backgroundMediaUrl;v.style.display='block';v.play().catch(()=>{})}
+  }
+  document.querySelectorAll('[data-key]').forEach(el=>el.addEventListener('input',updatePreview));
+  document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+</script>
+</body></html>
