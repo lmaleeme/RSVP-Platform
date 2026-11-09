@@ -76,16 +76,21 @@ $('rsvpForm').addEventListener('submit', async e => {
 // the page is interactive so SpreadsheetApp latency cannot delay first render.
 applySettings(initialSettings);
 if(window.google&&google.script&&google.script.run){
-  $('status').textContent='';
-  google.script.run
-    .withSuccessHandler(result=>{
-      if(result&&result.status==='ok') applySettings(result.theme||{});
-    })
-    .withFailureHandler(()=>{
-      // Keep the default invitation usable if settings are temporarily unavailable.
-      $('status').textContent='';
-    })
-    .getPublicConfig();
+  
+fetch('/api/config', {cache: 'no-store'})
+  .then(response => {
+    if (!response.ok) throw new Error('Settings unavailable');
+    return response.json();
+  })
+  .then(result => {
+    if (result && result.status === 'ok') {
+      applySettings(result.theme || {});
+    }
+  })
+  .catch(() => {
+    $('status').textContent = '';
+  });
+
 }else{
   $('status').textContent='Preview mode — publish via Google Apps Script to accept RSVPs.';
 }
