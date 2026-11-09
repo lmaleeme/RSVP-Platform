@@ -1,97 +1,482 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f1ed"><title>Sip & See | RSVP</title>
-<style>
-:root{--accent:#8e2528;--paper:#f7f4ef;--ink:#292527}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}.shell{max-width:680px;margin:auto}.hero{background:#f4f0eb}.hero img{display:block;width:100%;height:auto;aspect-ratio:1080/1500;object-fit:contain}.scrollhint{text-align:center;font-size:13px;letter-spacing:.12em;color:#80565a;padding:13px 0 19px}.invitation-copy{text-align:center;max-width:620px;margin:0 auto 22px;padding:0 22px;color:var(--ink)}.invitation-copy h1{font:500 clamp(28px,6vw,39px)/1.1 Georgia,serif;color:var(--accent);margin:4px 0 10px}.invitation-copy p{white-space:pre-wrap;margin:8px 0;color:#6a6260}.panel{background:#fff;margin:0 auto 45px;padding:clamp(22px,5vw,40px);box-shadow:0 8px 35px #432b2614;border-radius:18px;max-width:620px}.panel h1{font:500 clamp(28px,6vw,39px)/1.1 Georgia,serif;color:var(--accent);text-align:center;margin:4px 0 10px}.panel .subtitle{text-align:center;color:#6a6260;margin:0 0 25px}.field{margin:0 0 17px}label{display:block;font-size:14px;font-weight:650;margin:0 0 7px}input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d8d0cb;border-radius:9px;background:white;color:#292527;font:inherit;min-height:48px}textarea{min-height:92px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.button{width:100%;padding:15px;border:0;border-radius:10px;background:var(--accent);color:white;font:600 16px system-ui;cursor:pointer}.button:disabled{opacity:.55;cursor:wait}.note{font-size:12px;color:#6a6260}.error{color:#a12323;font-size:13px;margin:12px 0}.hidden{display:none!important}.success{text-align:center;padding:22px 0}.success h2{font:500 31px Georgia,serif;color:var(--accent)}.secondary{color:#777;font-size:13px}.status{text-align:center;color:#635853;font-size:13px;margin:10px 0}@media(max-width:550px){.shell{width:100%}.panel{border-radius:18px 18px 0 0;margin:0;padding:24px 20px 42px}.two{grid-template-columns:1fr}.scrollhint{padding:12px 0 18px}}
-</style></head><body><main class="shell"><section class="hero" aria-label="Sip and See art exhibition invitation"><img id="invitationArtwork" alt="Sip and See invitation: Tuesday 24 November 2026, The Art Quarter, Michelangelo Towers, 17:30 to 20:00. RSVP by Friday 13 November." src="https://lmaleeme.github.io/RSVP-Platform/sipnsee.png" fetchpriority="high" loading="eager" decoding="async"></section><div class="scrollhint">SCROLL DOWN TO RSVP ↓</div><section class="invitation-copy" id="invitationCopy"><p id="invitationIntro"></p><p id="invitationMessage"></p></section><section class="panel" id="response"><div id="formPanel"><form id="rsvpForm"><div class="two"><div class="field"><label for="firstName">First name *</label><input id="firstName" autocomplete="given-name" required maxlength="100"></div><div class="field"><label for="lastName">Surname *</label><input id="lastName" autocomplete="family-name" required maxlength="100"></div></div><div class="field"><label for="attendance">Will you be attending? *</label><select id="attendance" required><option value="">Select your response</option><option value="Yes">Yes</option><option value="Yes with Partner">Yes with Partner</option><option value="Not attending">Not attending</option></select></div><p class="note">Your details are used to manage your RSVP for this event.</p><button class="button" id="submitBtn" type="submit">Submit RSVP</button><p class="error hidden" id="error" role="alert"></p></form></div><div id="success" class="success hidden" aria-live="polite"><p id="successMessage"></p></div><p class="status" id="status">Loading event settings…</p></section></main>
-<script>
-const initialSettings = {};
-const WEB_APP_URL=''; // Serve through the Apps Script web app (?page=index) to record RSVPs.
-const DEFAULT_ARTWORK_URL='https://lmaleeme.github.io/RSVP-Platform/sipnsee.png';
-const $=id=>document.getElementById(id);
-let settings={campaignTitle:'Sip & See',introText:'',invitationMessage:'',eventDate:'2026-11-24',eventStartTime:'17:30',eventEndTime:'20:00',eventVenue:'The Art Quarter, Michelangelo Towers',rsvpByDate:'2026-11-13'};
-const defaults={...settings};
-function setInvitationArtwork(url){
-  const img=$('invitationArtwork');
-  const requested=(url||'').trim()||DEFAULT_ARTWORK_URL;
-  if(img.dataset.requestedSrc===requested)return;
-  img.dataset.requestedSrc=requested;
-  img.onerror=function(){
-    if(requested!==DEFAULT_ARTWORK_URL){
-      img.dataset.requestedSrc=DEFAULT_ARTWORK_URL;
-      img.src=DEFAULT_ARTWORK_URL;
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f1ed">
+  <title>Sip & See | RSVP</title>
+
+  <style>
+    :root {
+      --accent: #8e2528;
+      --paper: #f7f4ef;
+      --ink: #292527;
     }
-  };
-  img.onload=function(){img.classList.remove('image-error');};
-  img.src=requested;
-}
-function applySettings(s){
-  settings={...defaults,...(s||{})};
-  setInvitationArtwork(settings.logoUrl||DEFAULT_ARTWORK_URL);
-  $('invitationIntro').textContent=settings.introText||'';
-  $('invitationMessage').textContent=settings.invitationMessage||'';
-  $('invitationCopy').classList.toggle('hidden',!($('invitationIntro').textContent||$('invitationMessage').textContent));
-  document.documentElement.style.setProperty('--accent',settings.primaryColor||'#8e2528');
-  $('status').textContent='';
-}
-/* Calendar invite generation is temporarily disabled while mobile compatibility is reviewed.
-function finish(result,payload){if(!result||result.status!=='ok'){showError((result&&result.message)||'The server did not confirm your RSVP. Please retry.');return;}$('formPanel').classList.add('hidden');$('success').classList.remove('hidden');const yes=payload.attendance==='Yes'||payload.attendance==='Yes with Partner';$('successMessage').textContent='Thank you! I look forward to seeing you.';if(yes){const url=URL.createObjectURL(calendarFile());$('calendar').href=url;$('calendar').classList.remove('hidden');$('calendarNote').textContent='Download the .ics file, then open it on your Android phone to add the event to Google Calendar.';}$('status').textContent='Your RSVP has been saved.';}
-*/
-function finish(result,payload){if(!result||result.status!=='ok'){showError((result&&result.message)||'The server did not confirm your RSVP. Please retry.');return;}$('formPanel').classList.add('hidden');$('success').classList.remove('hidden');$('successMessage').textContent='Thank you! I look forward to seeing you.';}
-function showError(msg){$('error').textContent=msg;$('error').classList.remove('hidden');$('submitBtn').disabled=false;$('submitBtn').textContent='Submit RSVP';}
-$('rsvpForm').addEventListener('submit',
-$('rsvpForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  $('error').classList.add('hidden');
 
-  if (!$('rsvpForm').reportValidity()) return;
+    * {
+      box-sizing: border-box;
+    }
 
-  const payload = {
-    action: 'submitRSVP',
-    rsvpReference: 'RSVP-' + Date.now().toString(36).toUpperCase() +
-      '-' + Math.random().toString(36).slice(2,7).toUpperCase(),
-    firstName: $('firstName').value.trim(),
-    lastName: $('lastName').value.trim(),
-    attendance: $('attendance').value,
-    submittedAt: new Date().toISOString()
-  };
+    html {
+      scroll-behavior: smooth;
+    }
 
-  $('submitBtn').disabled = true;
-  $('submitBtn').textContent = 'Submitting…';
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+    }
 
-  try {
-    const response = await fetch('/api/rsvp', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
+    .shell {
+      max-width: 680px;
+      margin: auto;
+    }
+
+    .hero {
+      background: #f4f0eb;
+    }
+
+    .hero img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1080 / 1500;
+      object-fit: contain;
+    }
+
+    .scrollhint {
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: .12em;
+      color: #80565a;
+      padding: 13px 0 19px;
+    }
+
+    .invitation-copy {
+      text-align: center;
+      max-width: 620px;
+      margin: 0 auto 22px;
+      padding: 0 22px;
+      color: var(--ink);
+    }
+
+    .invitation-copy h1 {
+      font: 500 clamp(28px, 6vw, 39px)/1.1 Georgia, serif;
+      color: var(--accent);
+      margin: 4px 0 10px;
+    }
+
+    .invitation-copy p {
+      white-space: pre-wrap;
+      margin: 8px 0;
+      color: #6a6260;
+    }
+
+    .panel {
+      background: #fff;
+      margin: 0 auto 45px;
+      padding: clamp(22px, 5vw, 40px);
+      box-shadow: 0 8px 35px #432b2614;
+      border-radius: 18px;
+      max-width: 620px;
+    }
+
+    .panel h1 {
+      font: 500 clamp(28px, 6vw, 39px)/1.1 Georgia, serif;
+      color: var(--accent);
+      text-align: center;
+      margin: 4px 0 10px;
+    }
+
+    .panel .subtitle {
+      text-align: center;
+      color: #6a6260;
+      margin: 0 0 25px;
+    }
+
+    .field {
+      margin: 0 0 17px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 650;
+      margin: 0 0 7px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #d8d0cb;
+      border-radius: 9px;
+      background: white;
+      color: #292527;
+      font: inherit;
+      min-height: 48px;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .button {
+      width: 100%;
+      padding: 15px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: white;
+      font: 600 16px system-ui;
+      cursor: pointer;
+    }
+
+    .button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #6a6260;
+    }
+
+    .error {
+      color: #a12323;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .success {
+      text-align: center;
+      padding: 22px 0;
+    }
+
+    .success h2 {
+      font: 500 31px Georgia, serif;
+      color: var(--accent);
+    }
+
+    .secondary {
+      color: #777;
+      font-size: 13px;
+    }
+
+    .status {
+      text-align: center;
+      color: #635853;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+
+    @media (max-width: 550px) {
+      .shell {
+        width: 100%;
+      }
+
+      .panel {
+        border-radius: 18px 18px 0 0;
+        margin: 0;
+        padding: 24px 20px 42px;
+      }
+
+      .two {
+        grid-template-columns: 1fr;
+      }
+
+      .scrollhint {
+        padding: 12px 0 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="shell">
+
+    <section class="hero" aria-label="Sip and See art exhibition invitation">
+      <img
+        id="invitationArtwork"
+        alt="Sip and See invitation"
+        src="https://lmaleeme.github.io/RSVP-Platform/sipnsee.png"
+        fetchpriority="high"
+        loading="eager"
+        decoding="async"
+      >
+    </section>
+
+    <div class="scrollhint">SCROLL DOWN TO RSVP ↓</div>
+
+    <section class="invitation-copy" id="invitationCopy">
+      <p id="invitationIntro"></p>
+      <p id="invitationMessage"></p>
+    </section>
+
+    <section class="panel" id="response">
+
+      <div id="formPanel">
+
+        <form id="rsvpForm">
+
+          <div class="two">
+
+            <div class="field">
+              <label for="firstName">First name *</label>
+              <input
+                id="firstName"
+                autocomplete="given-name"
+                required
+                maxlength="100"
+              >
+            </div>
+
+            <div class="field">
+              <label for="lastName">Surname *</label>
+              <input
+                id="lastName"
+                autocomplete="family-name"
+                required
+                maxlength="100"
+              >
+            </div>
+
+          </div>
+
+          <div class="field">
+            <label for="attendance">Will you be attending? *</label>
+
+            <select id="attendance" required>
+              <option value="">Select your response</option>
+              <option value="Yes">Yes</option>
+              <option value="Yes with Partner">Yes with Partner</option>
+              <option value="Not attending">Not attending</option>
+            </select>
+          </div>
+
+          <p class="note">
+            Your details are used to manage your RSVP for this event.
+          </p>
+
+          <button class="button" id="submitBtn" type="submit">
+            Submit RSVP
+          </button>
+
+          <p class="error hidden" id="error" role="alert"></p>
+
+        </form>
+
+      </div>
+
+      <div id="success" class="success hidden" aria-live="polite">
+        <p id="successMessage">
+          Thank you! I look forward to seeing you.
+        </p>
+      </div>
+
+      <p class="status" id="status">Loading event settings…</p>
+
+    </section>
+
+  </main>
+
+  <script>
+    const DEFAULT_ARTWORK_URL =
+      'https://lmaleeme.github.io/RSVP-Platform/sipnsee.png';
+
+    const $ = id => document.getElementById(id);
+
+    const defaults = {
+      campaignTitle: 'Sip & See',
+      introText: '',
+      invitationMessage: '',
+      eventDate: '2026-11-24',
+      eventStartTime: '17:30',
+      eventEndTime: '20:00',
+      eventVenue: 'The Art Quarter, Michelangelo Towers',
+      rsvpByDate: '2026-11-13',
+      primaryColor: '#8e2528'
+    };
+
+    let settings = { ...defaults };
+
+    function setInvitationArtwork(url) {
+      const img = $('invitationArtwork');
+      const requested = (url || '').trim() || DEFAULT_ARTWORK_URL;
+
+      if (img.dataset.requestedSrc === requested) return;
+
+      img.dataset.requestedSrc = requested;
+
+      img.onerror = function () {
+        if (requested !== DEFAULT_ARTWORK_URL) {
+          img.dataset.requestedSrc = DEFAULT_ARTWORK_URL;
+          img.src = DEFAULT_ARTWORK_URL;
+        }
+      };
+
+      img.src = requested;
+    }
+
+    function applySettings(newSettings) {
+      settings = {
+        ...defaults,
+        ...(newSettings || {})
+      };
+
+      setInvitationArtwork(
+        settings.logoUrl || DEFAULT_ARTWORK_URL
+      );
+
+      $('invitationIntro').textContent =
+        settings.introText || '';
+
+      $('invitationMessage').textContent =
+        settings.invitationMessage || '';
+
+      const hasCopy =
+        $('invitationIntro').textContent ||
+        $('invitationMessage').textContent;
+
+      $('invitationCopy').classList.toggle(
+        'hidden',
+        !hasCopy
+      );
+
+      document.documentElement.style.setProperty(
+        '--accent',
+        settings.primaryColor || '#8e2528'
+      );
+    }
+
+    function showError(message) {
+      $('error').textContent = message;
+      $('error').classList.remove('hidden');
+
+      $('submitBtn').disabled = false;
+      $('submitBtn').textContent = 'Submit RSVP';
+    }
+
+    function finish(result) {
+      if (!result || result.status !== 'ok') {
+        showError(
+          (result && result.message) ||
+          'The server did not confirm your RSVP. Please retry.'
+        );
+        return;
+      }
+
+      $('formPanel').classList.add('hidden');
+      $('success').classList.remove('hidden');
+
+      $('successMessage').textContent =
+        'Thank you! I look forward to seeing you.';
+
+      $('status').textContent = '';
+    }
+
+    // Load the latest invitation settings through Cloudflare.
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/config', {
+          method: 'GET',
+          cache: 'no-store'
+        });
+
+        if (!response.ok) {
+          throw new Error('Settings request failed: ' + response.status);
+        }
+
+        const result = await response.json();
+
+        if (!result || result.status !== 'ok') {
+          throw new Error('Invalid settings response');
+        }
+
+        applySettings(result.theme || {});
+        $('status').textContent = '';
+
+      } catch (error) {
+        console.error('Settings loading error:', error);
+        $('status').textContent =
+          'Unable to load the latest event settings.';
+      }
+    }
+
+    // Submit the RSVP through the Cloudflare API.
+    $('rsvpForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      $('error').classList.add('hidden');
+
+      if (!$('rsvpForm').reportValidity()) {
+        return;
+      }
+
+      const payload = {
+        action: 'submitRSVP',
+        rsvpReference:
+          'RSVP-' +
+          Date.now().toString(36).toUpperCase() +
+          '-' +
+          Math.random().toString(36).slice(2, 7).toUpperCase(),
+
+        firstName: $('firstName').value.trim(),
+        lastName: $('lastName').value.trim(),
+        attendance: $('attendance').value,
+        submittedAt: new Date().toISOString()
+      };
+
+      $('submitBtn').disabled = true;
+      $('submitBtn').textContent = 'Submitting…';
+
+      try {
+        const response = await fetch('/api/rsvp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.message || 'RSVP submission failed.'
+          );
+        }
+
+        finish(result);
+
+      } catch (error) {
+        console.error('RSVP submission error:', error);
+
+        showError(
+          error.message ||
+          'Unable to submit your RSVP. Please try again.'
+        );
+      }
     });
 
-    const result = await response.json();
-    finish(result, payload);
+    // Show local defaults immediately, then load editable settings.
+    applySettings(defaults);
+    loadSettings();
 
-  } catch (error) {
-    showError('Unable to submit your RSVP. Please try again.');
-  }
-});
+  </script>
 
-// Paint immediately with local defaults. Fetch editable settings only after
-// the page is interactive so SpreadsheetApp latency cannot delay first render.
-applySettings(initialSettings);
-if(window.google&&google.script&&google.script.run){
-  
-fetch('/api/config', {cache: 'no-store'})
-  .then(response => {
-    if (!response.ok) throw new Error('Settings unavailable');
-    return response.json();
-  })
-  .then(result => {
-    if (result && result.status === 'ok') {
-      applySettings(result.theme || {});
-    }
-  })
-  .catch(() => {
-    $('status').textContent = '';
-  });
-
-}else{
-  $('status').textContent='Preview mode — publish via Google Apps Script to accept RSVPs.';
-}
-</script></body></html>
+</body>
+</html>
