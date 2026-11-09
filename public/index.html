@@ -35,7 +35,7 @@ function applySettings(s){
 /* Calendar invite generation is temporarily disabled while mobile compatibility is reviewed.
 function finish(result,payload){if(!result||result.status!=='ok'){showError((result&&result.message)||'The server did not confirm your RSVP. Please retry.');return;}$('formPanel').classList.add('hidden');$('success').classList.remove('hidden');const yes=payload.attendance==='Yes'||payload.attendance==='Yes with Partner';$('successMessage').textContent='Thank you! I look forward to seeing you.';if(yes){const url=URL.createObjectURL(calendarFile());$('calendar').href=url;$('calendar').classList.remove('hidden');$('calendarNote').textContent='Download the .ics file, then open it on your Android phone to add the event to Google Calendar.';}$('status').textContent='Your RSVP has been saved.';}
 */
-function finish(result,payload){if(!result||result.status!=='ok'){showError((result&&result.message)||'The server did not confirm your RSVP. Please retry.');return;}$('formPanel').classList.add('hidden');$('success').classList.remove('hidden');$('successMessage').textContent='Thank you! I look forward to seeing you.';$('status').textContent='Your RSVP has been saved.';}
+function finish(result,payload){if(!result||result.status!=='ok'){showError((result&&result.message)||'The server did not confirm your RSVP. Please retry.');return;}$('formPanel').classList.add('hidden');$('success').classList.remove('hidden');$('successMessage').textContent='Thank you! I look forward to seeing you.';}
 function showError(msg){$('error').textContent=msg;$('error').classList.remove('hidden');$('submitBtn').disabled=false;$('submitBtn').textContent='Submit RSVP';}
 $('rsvpForm').addEventListener('submit',
 $('rsvpForm').addEventListener('submit', async e => {
