@@ -37,7 +37,41 @@ function finish(result,payload){if(!result||result.status!=='ok'){showError((res
 */
 function finish(result,payload){if(!result||result.status!=='ok'){showError((result&&result.message)||'The server did not confirm your RSVP. Please retry.');return;}$('formPanel').classList.add('hidden');$('success').classList.remove('hidden');$('successMessage').textContent='Thank you! I look forward to seeing you.';$('status').textContent='Your RSVP has been saved.';}
 function showError(msg){$('error').textContent=msg;$('error').classList.remove('hidden');$('submitBtn').disabled=false;$('submitBtn').textContent='Submit RSVP';}
-$('rsvpForm').addEventListener('submit',e=>{e.preventDefault();$('error').classList.add('hidden');if(!$('rsvpForm').reportValidity())return;const payload={action:'submitRSVP',rsvpReference:'RSVP-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,7).toUpperCase(),firstName:$('firstName').value.trim(),lastName:$('lastName').value.trim(),attendance:$('attendance').value,submittedAt:new Date().toISOString()};$('submitBtn').disabled=true;$('submitBtn').textContent='Submitting…';if(window.google&&google.script&&google.script.run){google.script.run.withSuccessHandler(r=>finish(r,payload)).withFailureHandler(err=>showError(err.message||'Submission failed')).submitRSVP(payload);}else{showError('To confirm and record attendance, open this invitation through the deployed Apps Script URL ending ?page=index.');}});
+$('rsvpForm').addEventListener('submit',
+$('rsvpForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('error').classList.add('hidden');
+
+  if (!$('rsvpForm').reportValidity()) return;
+
+  const payload = {
+    action: 'submitRSVP',
+    rsvpReference: 'RSVP-' + Date.now().toString(36).toUpperCase() +
+      '-' + Math.random().toString(36).slice(2,7).toUpperCase(),
+    firstName: $('firstName').value.trim(),
+    lastName: $('lastName').value.trim(),
+    attendance: $('attendance').value,
+    submittedAt: new Date().toISOString()
+  };
+
+  $('submitBtn').disabled = true;
+  $('submitBtn').textContent = 'Submitting…';
+
+  try {
+    const response = await fetch('/api/rsvp', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    finish(result, payload);
+
+  } catch (error) {
+    showError('Unable to submit your RSVP. Please try again.');
+  }
+});
+
 // Paint immediately with local defaults. Fetch editable settings only after
 // the page is interactive so SpreadsheetApp latency cannot delay first render.
 applySettings(initialSettings);
