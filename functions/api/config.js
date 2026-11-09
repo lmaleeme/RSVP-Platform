@@ -1,4 +1,4 @@
-
+// Trigger fresh Cloudflare deployment
 export async function onRequestGet({ env }) {
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
