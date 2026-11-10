@@ -1,4 +1,4 @@
-
+<!-- CHANGE: MOBILE ARTWORK ZOOM — stronger 120% image enlargement, centred crop, reduced side and bottom whitespace. RSVP functionality preserved. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -182,7 +182,7 @@
       margin: 10px 0;
     }
 
-    /* MOBILE INVITATION DISPLAY */
+    /* MOBILE ARTWORK ZOOM - NEW VERSION */
 
     @media (max-width: 550px) {
 
@@ -191,45 +191,61 @@
         max-width: none;
       }
 
+      /*
+        Fixed viewport image container.
+        Anything outside this area is cropped.
+      */
+
       .hero {
+        position: relative;
+        display: block;
         width: 100%;
         height: calc(100vh - 54px);
         height: calc(100svh - 54px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         overflow: hidden;
         background: #f4f0eb;
       }
 
       /*
-        Enlarge artwork to reduce visible side margins.
-        The 120% width enlarges the artwork horizontally.
-        A small crop is intentional.
+        Stronger image zoom.
+
+        Scale 1.20 = 120% enlargement.
+        Absolute positioning prevents flex shrinking.
+        Object positioning moves the crop slightly
+        towards the lower part of the invitation.
       */
 
       .hero img {
+        position: absolute;
         display: block;
-        width: 120%;
+
+        top: 0;
+        left: 0;
+
+        width: 100%;
         height: 100%;
+
         max-width: none;
         aspect-ratio: auto;
-        object-fit: cover;
-        object-position: center 40%;
-        transform: translateY(0) scale(1.05);
-      }
 
-      /*
-        Scroll prompt remains visible below artwork.
-      */
+        object-fit: cover;
+        object-position: center 60%;
+
+        transform: scale(1.20);
+        transform-origin: center center;
+      }
 
       .scrollhint {
         height: 54px;
+        width: 100%;
         padding: 0;
+
         display: flex;
         align-items: center;
         justify-content: center;
+
         background: var(--paper);
+        font-size: 12px;
       }
 
       .panel {
