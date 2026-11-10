@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f1ed">
   <title>Sip & See | RSVP</title>
 
@@ -12,6 +11,7 @@
       --accent: #8e2528;
       --paper: #f7f4ef;
       --ink: #292527;
+      --scroll-height: 54px;
     }
 
     * {
@@ -183,37 +183,61 @@
     }
 
     /* MOBILE INVITATION DISPLAY */
+
     @media (max-width: 550px) {
+
       .shell {
         width: 100%;
+        max-width: none;
       }
 
-      /* Reserve the first screen for the complete invitation. */
+      /*
+        Fill the available mobile screen.
+        Reserve 54px for the RSVP scroll prompt.
+      */
+
       .hero {
-        height: calc(100vh - 54px);
-        height: calc(100svh - 54px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 100%;
+        height: calc(100vh - var(--scroll-height));
+        height: calc(100svh - var(--scroll-height));
+        height: calc(100dvh - var(--scroll-height));
+
+        display: block;
         overflow: hidden;
+        background: #f4f0eb;
       }
 
-      /* Keep the entire artwork visible. Never crop it. */
+      /*
+        ENLARGE THE INVITATION.
+
+        Cover fills the screen instead of shrinking
+        the artwork to fit. A small amount of cropping
+        at the edges is intentional.
+      */
+
       .hero img {
         display: block;
         width: 100%;
         height: 100%;
         aspect-ratio: auto;
-        object-fit: contain;
+        object-fit: cover;
+        object-position: center center;
       }
 
-      /* Keep the RSVP prompt at the bottom of the first screen. */
+      /*
+        Keep the scroll prompt visible immediately
+        beneath the invitation.
+      */
+
       .scrollhint {
-        height: 54px;
+        width: 100%;
+        height: var(--scroll-height);
         padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
+        background: var(--paper);
+        font-size: 12px;
       }
 
       .panel {
@@ -226,6 +250,7 @@
         grid-template-columns: 1fr;
       }
     }
+
   </style>
 </head>
 
@@ -394,6 +419,7 @@
     }
 
     /* Display the correct confirmation for each attendance choice. */
+
     function finish(result, payload) {
       if (!result || result.status !== 'ok') {
         showError(
@@ -418,6 +444,7 @@
     }
 
     // Load the latest invitation settings through Cloudflare.
+
     async function loadSettings() {
       try {
         const response = await fetch('/api/config', {
@@ -446,6 +473,7 @@
     }
 
     // Submit the RSVP through the existing Cloudflare API.
+
     $('rsvpForm').addEventListener('submit', async function (event) {
       event.preventDefault();
 
@@ -501,6 +529,7 @@
     });
 
     // Show local defaults immediately, then load editable settings.
+
     applySettings(defaults);
     loadSettings();
 
