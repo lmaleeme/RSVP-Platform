@@ -182,9 +182,38 @@
       margin: 10px 0;
     }
 
+    /* MOBILE INVITATION DISPLAY */
     @media (max-width: 550px) {
       .shell {
         width: 100%;
+      }
+
+      /* Reserve the first screen for the complete invitation. */
+      .hero {
+        height: calc(100vh - 54px);
+        height: calc(100svh - 54px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      /* Keep the entire artwork visible. Never crop it. */
+      .hero img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: auto;
+        object-fit: contain;
+      }
+
+      /* Keep the RSVP prompt at the bottom of the first screen. */
+      .scrollhint {
+        height: 54px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .panel {
@@ -195,10 +224,6 @@
 
       .two {
         grid-template-columns: 1fr;
-      }
-
-      .scrollhint {
-        padding: 12px 0 18px;
       }
     }
   </style>
@@ -258,7 +283,6 @@
 
           <div class="field">
             <label for="attendance">Will you be attending? *</label>
-
             <select id="attendance" required>
               <option value="">Select your response</option>
               <option value="Yes">Yes</option>
@@ -365,12 +389,12 @@
     function showError(message) {
       $('error').textContent = message;
       $('error').classList.remove('hidden');
-
       $('submitBtn').disabled = false;
       $('submitBtn').textContent = 'Submit RSVP';
     }
 
-    function finish(result) {
+    /* Display the correct confirmation for each attendance choice. */
+    function finish(result, payload) {
       if (!result || result.status !== 'ok') {
         showError(
           (result && result.message) ||
@@ -382,8 +406,13 @@
       $('formPanel').classList.add('hidden');
       $('success').classList.remove('hidden');
 
-      $('successMessage').textContent =
-        'Thank you! I look forward to seeing you.';
+      if (payload.attendance === 'Not attending') {
+        $('successMessage').textContent =
+          "So sorry you can't join us! We'll raise a glass for you.";
+      } else {
+        $('successMessage').textContent =
+          'Thank you! I look forward to seeing you.';
+      }
 
       $('status').textContent = '';
     }
@@ -416,7 +445,7 @@
       }
     }
 
-    // Submit the RSVP through the Cloudflare API.
+    // Submit the RSVP through the existing Cloudflare API.
     $('rsvpForm').addEventListener('submit', async function (event) {
       event.preventDefault();
 
@@ -433,7 +462,6 @@
           Date.now().toString(36).toUpperCase() +
           '-' +
           Math.random().toString(36).slice(2, 7).toUpperCase(),
-
         firstName: $('firstName').value.trim(),
         lastName: $('lastName').value.trim(),
         attendance: $('attendance').value,
@@ -460,7 +488,7 @@
           );
         }
 
-        finish(result);
+        finish(result, payload);
 
       } catch (error) {
         console.error('RSVP submission error:', error);
