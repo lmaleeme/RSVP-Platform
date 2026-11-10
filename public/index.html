@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f1ed">
   <title>Sip & See | RSVP</title>
 
@@ -11,7 +12,6 @@
       --accent: #8e2528;
       --paper: #f7f4ef;
       --ink: #292527;
-      --scroll-height: 54px;
     }
 
     * {
@@ -191,53 +191,45 @@
         max-width: none;
       }
 
-      /*
-        Fill the available mobile screen.
-        Reserve 54px for the RSVP scroll prompt.
-      */
-
       .hero {
         width: 100%;
-        height: calc(100vh - var(--scroll-height));
-        height: calc(100svh - var(--scroll-height));
-        height: calc(100dvh - var(--scroll-height));
-
-        display: block;
+        height: calc(100vh - 54px);
+        height: calc(100svh - 54px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         overflow: hidden;
         background: #f4f0eb;
       }
 
       /*
-        ENLARGE THE INVITATION.
-
-        Cover fills the screen instead of shrinking
-        the artwork to fit. A small amount of cropping
-        at the edges is intentional.
+        Enlarge artwork to reduce visible side margins.
+        The 120% width enlarges the artwork horizontally.
+        A small crop is intentional.
       */
 
       .hero img {
         display: block;
-        width: 100%;
+        width: 120%;
         height: 100%;
+        max-width: none;
         aspect-ratio: auto;
         object-fit: cover;
-        object-position: center center;
+        object-position: center 40%;
+        transform: translateY(0) scale(1.05);
       }
 
       /*
-        Keep the scroll prompt visible immediately
-        beneath the invitation.
+        Scroll prompt remains visible below artwork.
       */
 
       .scrollhint {
-        width: 100%;
-        height: var(--scroll-height);
+        height: 54px;
         padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
         background: var(--paper);
-        font-size: 12px;
       }
 
       .panel {
@@ -259,6 +251,7 @@
   <main class="shell">
 
     <section class="hero" aria-label="Sip and See art exhibition invitation">
+
       <img
         id="invitationArtwork"
         alt="Sip and See invitation"
@@ -267,6 +260,7 @@
         loading="eager"
         decoding="async"
       >
+
     </section>
 
     <div class="scrollhint">SCROLL DOWN TO RSVP ↓</div>
@@ -443,7 +437,7 @@
       $('status').textContent = '';
     }
 
-    // Load the latest invitation settings through Cloudflare.
+    // Load latest invitation settings through Cloudflare.
 
     async function loadSettings() {
       try {
@@ -472,7 +466,7 @@
       }
     }
 
-    // Submit the RSVP through the existing Cloudflare API.
+    // Submit RSVP through the existing Cloudflare API.
 
     $('rsvpForm').addEventListener('submit', async function (event) {
       event.preventDefault();
