@@ -1,4 +1,4 @@
-<!-- CHANGE: MOBILE ARTWORK ZOOM — stronger 120% image enlargement, centred crop, reduced side and bottom whitespace. RSVP functionality preserved. -->
+<!-- GitHub/Cloudflare RSVP: automatic closing date enforcement UI. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -156,6 +156,10 @@
       margin: 12px 0;
     }
 
+    .closed-banner { text-align: center; padding: 24px 12px; color: var(--accent); }
+    .closed-banner h2 { font: 500 30px Georgia, serif; margin: 0 0 12px; }
+    .closed-banner p { color: var(--ink); }
+
     .hidden {
       display: none !important;
     }
@@ -288,7 +292,11 @@
 
     <section class="panel" id="response">
 
-      <div id="formPanel">
+      <div id="closedBanner" class="closed-banner hidden" role="status">
+        <h2>RSVPs are now closed</h2>
+        <p>Thank you for your interest. The RSVP deadline has passed.</p>
+      </div>
+      <div id="formPanel" class="hidden">
 
         <form id="rsvpForm">
 
@@ -366,11 +374,28 @@
       eventStartTime: '17:30',
       eventEndTime: '20:00',
       eventVenue: 'The Art Quarter, Michelangelo Towers',
-      rsvpByDate: '2026-11-13',
+      rsvpByDate: '',
       primaryColor: '#8e2528'
     };
 
     let settings = { ...defaults };
+    let configReady = false, serverClosed = false, submitting = false, completed = false;
+    function isClosed() {
+      const deadline = String(settings.rsvpByDate || '').trim();
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(new Date());
+      const part = type => today.find(p => p.type === type).value;
+      const date = `${part('year')}-${part('month')}-${part('day')}`;
+      return serverClosed || (/^\d{4}-\d{2}-\d{2}$/.test(deadline) && date > deadline);
+    }
+    function updateClosingState() {
+      if (completed || submitting) return;
+      const closed = configReady && isClosed();
+      $('closedBanner').classList.toggle('hidden', !closed);
+      $('formPanel').classList.toggle('hidden', !configReady || closed);
+      document.querySelector('.scrollhint').textContent = closed ? 'RSVPs CLOSED ↓' : 'SCROLL DOWN TO RSVP ↓';
+    }
 
     function setInvitationArtwork(url) {
       const img = $('invitationArtwork');
@@ -439,6 +464,7 @@
         return;
       }
 
+      completed = true;
       $('formPanel').classList.add('hidden');
       $('success').classList.remove('hidden');
 
@@ -472,7 +498,13 @@
           throw new Error('Invalid settings response');
         }
 
-        applySettings(result.theme || {});
+        if (!result.theme || typeof result.theme !== 'object' || !Object.prototype.hasOwnProperty.call(result.theme, 'rsvpByDate')) throw new Error('Missing RSVP deadline setting');
+        const deadline = String(result.theme.rsvpByDate || '').trim();
+        if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) throw new Error('Invalid RSVP deadline');
+        applySettings(result.theme);
+        serverClosed = result.rsvpClosed === true;
+        configReady = true;
+        updateClosingState();
         $('status').textContent = '';
 
       } catch (error) {
@@ -487,6 +519,8 @@
     $('rsvpForm').addEventListener('submit', async function (event) {
       event.preventDefault();
 
+      if (submitting || completed || !configReady) return;
+      if (isClosed()) { updateClosingState(); return; }
       $('error').classList.add('hidden');
 
       if (!$('rsvpForm').reportValidity()) {
@@ -506,6 +540,7 @@
         submittedAt: new Date().toISOString()
       };
 
+      submitting = true;
       $('submitBtn').disabled = true;
       $('submitBtn').textContent = 'Submitting…';
 
@@ -520,6 +555,10 @@
 
         const result = await response.json();
 
+        if (result && (result.code === 'RSVP_CLOSED' || /RSVPs? (?:are |is )?(?:now )?closed/i.test(result.message || ''))) {
+          serverClosed = true;
+          return;
+        }
         if (!response.ok) {
           throw new Error(
             result.message || 'RSVP submission failed.'
@@ -535,6 +574,9 @@
           error.message ||
           'Unable to submit your RSVP. Please try again.'
         );
+      } finally {
+        submitting = false;
+        updateClosingState();
       }
     });
 
@@ -542,6 +584,7 @@
 
     applySettings(defaults);
     loadSettings();
+    setInterval(() => { if (!completed && !submitting) loadSettings(); }, 60000);
 
   </script>
 
